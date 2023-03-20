@@ -13,20 +13,20 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class UserService {
-    private final UserStorage storage;
+    private final UserStorage userStorage;
 
     @Autowired
-    public UserService(UserStorage storage) {
-        this.storage = storage;
+    public UserService(UserStorage userStorage) {
+        this.userStorage = userStorage;
     }
 
     public List<User> getUsers() {
-        return storage.getUsers();
+        return userStorage.getUsers();
     }
 
     public User getUserById(int id) {
         checkUserId(id);
-        return storage.getUserById(id);
+        return userStorage.getUserById(id);
     }
 
     public User addUser(User user) {
@@ -35,7 +35,7 @@ public class UserService {
         }
 
         log.debug("POST request handled: new user added");
-        return storage.addUser(user);
+        return userStorage.addUser(user);
     }
 
     public User updateUser(User user) {
@@ -46,12 +46,12 @@ public class UserService {
         }
 
         log.debug(String.format("PUT request handled: user %d is updated", user.getId()));
-        return storage.updateUser(user);
+        return userStorage.updateUser(user);
     }
 
     public void deleteUser(int id) {
         checkUserId(id);
-        storage.deleteUser(id);
+        userStorage.deleteUser(id);
         log.debug(String.format("DELETE request handled: user %d is deleted", id));
     }
 
@@ -59,8 +59,8 @@ public class UserService {
         checkUserId(userId);
         checkUserId(friendId);
 
-        storage.getUserById(userId).addFriend(friendId);
-        storage.getUserById(friendId).addFriend(userId);
+        userStorage.getUserById(userId).addFriend(friendId);
+        userStorage.getUserById(friendId).addFriend(userId);
         log.debug(String.format("POST request handled: users %d and %d are now friends", userId, friendId));
     }
 
@@ -68,18 +68,18 @@ public class UserService {
         checkUserId(userid);
         checkUserId(friendId);
 
-        if (!storage.getUserById(userid).getFriendIds().contains(friendId)
-                || !storage.getUserById(friendId).getFriendIds().contains(userid)) {
+        if (!userStorage.getUserById(userid).getFriendIds().contains(friendId)
+                || !userStorage.getUserById(friendId).getFriendIds().contains(userid)) {
             throw new NotFoundException(String.format("Users %d and %d are not friends", userid, friendId));
         }
 
-        storage.getUserById(userid).deleteFriend(friendId);
-        storage.getUserById(friendId).deleteFriend(userid);
+        userStorage.getUserById(userid).deleteFriend(friendId);
+        userStorage.getUserById(friendId).deleteFriend(userid);
     }
 
     public List<User> getFriends(int userId) {
-        return storage.getUserById(userId).getFriendIds().stream()
-                .map(storage::getUserById)
+        return userStorage.getUserById(userId).getFriendIds().stream()
+                .map(userStorage::getUserById)
                 .collect(Collectors.toList());
     }
 
@@ -87,13 +87,13 @@ public class UserService {
         checkUserId(userId);
         checkUserId(otherUserId);
 
-        return storage.getUserById(userId).getFriendIds().stream()
-                .filter(id -> storage.getUserById(otherUserId).getFriendIds().contains(id))
-                .map(storage::getUserById)
+        return userStorage.getUserById(userId).getFriendIds().stream()
+                .filter(id -> userStorage.getUserById(otherUserId).getFriendIds().contains(id))
+                .map(userStorage::getUserById)
                 .collect(Collectors.toList());
     }
 
     protected void checkUserId(int id) {
-        storage.checkUserId(id);
+        userStorage.checkUserId(id);
     }
 }

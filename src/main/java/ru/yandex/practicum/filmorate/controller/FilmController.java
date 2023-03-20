@@ -19,51 +19,51 @@ import java.util.List;
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    private final FilmService service;
+    private final FilmService filmService;
 
     @Autowired
-    public FilmController(FilmService service) {
-        this.service = service;
+    public FilmController(FilmService filmService) {
+        this.filmService = filmService;
     }
 
     @GetMapping
     public List<Film> findAll() {
-        return service.getFilms();
+        return filmService.getFilms();
     }
 
     @GetMapping("/{id}")
     public Film findById(@PathVariable int id) {
-        return service.getFilmById(id);
+        return filmService.getFilmById(id);
     }
 
     @GetMapping("/popular")
     public List<Film> findMostPopular(@RequestParam(name = "count", defaultValue = "10") int count) {
-        return service.getMostPopularFilms(count);
+        return filmService.getMostPopularFilms(count);
     }
 
     @PostMapping
     public Film create(@Valid @RequestBody Film film) {
-        return service.addFilm(film);
+        return filmService.addFilm(film);
     }
 
     @PutMapping
     public Film update(@Valid @RequestBody Film film) {
-        return service.updateFilm(film);
+        return filmService.updateFilm(film);
     }
 
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable int id, @PathVariable int userId) {
-        service.addLike(id, userId);
+        filmService.addLike(id, userId);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable int id) {
-        service.deleteFilm(id);
+        filmService.deleteFilm(id);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public void deleteLike(@PathVariable int id, @PathVariable int userId) {
-        service.deleteLike(id, userId);
+        filmService.deleteLike(id, userId);
     }
 
 }

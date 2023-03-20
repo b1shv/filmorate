@@ -18,55 +18,55 @@ import java.util.List;
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private final UserService service;
+    private final UserService userService;
 
     @Autowired
-    public UserController(UserService service) {
-        this.service = service;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping
     public List<User> findAll() {
-        return service.getUsers();
+        return userService.getUsers();
     }
 
     @GetMapping("/{id}")
     public User findById(@PathVariable int id) {
-        return service.getUserById(id);
+        return userService.getUserById(id);
     }
 
     @GetMapping("/{id}/friends")
     public List<User> findFriends(@PathVariable int id) {
-        return service.getFriends(id);
+        return userService.getFriends(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
     public List<User> findCommonFriends(@PathVariable int id, @PathVariable int otherId) {
-        return service.getCommonFriends(id, otherId);
+        return userService.getCommonFriends(id, otherId);
     }
 
     @PostMapping
     public User create(@Valid @RequestBody User user) {
-        return service.addUser(user);
+        return userService.addUser(user);
     }
 
     @PutMapping
     public User update(@Valid @RequestBody User user) {
-        return service.updateUser(user);
+        return userService.updateUser(user);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
     public void addFriend(@PathVariable int id, @PathVariable int friendId) {
-        service.addFriend(id, friendId);
+        userService.addFriend(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
     public void deleteFriend(@PathVariable int id, @PathVariable int friendId) {
-        service.deleteFriend(id, friendId);
+        userService.deleteFriend(id, friendId);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable int id) {
-        service.deleteUser(id);
+        userService.deleteUser(id);
     }
 }

@@ -18,34 +18,21 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFoundException(final NotFoundException e) {
-        log.warn("NotFoundException: " + e.getMessage());
+        log.warn("NotFoundException: " + e.getMessage(), e);
         return new ErrorResponse(e.getMessage());
     }
 
-    @ExceptionHandler
+    @ExceptionHandler({ValidationException.class, MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidationException(final ValidationException e) {
-        log.warn("ValidationException: " + e.getMessage());
+    public ErrorResponse handleValidationException(final Exception e) {
+        log.warn("ValidationException: " + e.getMessage(), e);
         return new ErrorResponse("Validation failed: " + e.getMessage());
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        Optional<ObjectError> objectError = e.getBindingResult().getAllErrors().stream().findFirst();
-
-        if (objectError.isPresent()) {
-            String message = objectError.get().getDefaultMessage();
-            return new ErrorResponse("Validation failed: " + message);
-        }
-
-        return new ErrorResponse("Validation failed");
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleThrowable(final Exception e) {
-        log.warn(e.toString());
+        log.warn(e.toString(), e);
         return new ErrorResponse("Unpredicted error");
     }
 
