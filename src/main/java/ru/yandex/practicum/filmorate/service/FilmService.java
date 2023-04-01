@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
@@ -32,7 +31,7 @@ public class FilmService {
 
     public List<Film> getMostPopularFilms(int count) {
         return filmStorage.getFilms().stream()
-                .sorted(Comparator.comparingInt(Film::getLikesNumber).reversed())
+                .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
                 .limit(count)
                 .collect(Collectors.toList());
     }
@@ -59,23 +58,23 @@ public class FilmService {
     public void deleteFilm(int id) {
         filmStorage.checkFilmId(id);
         filmStorage.deleteFilm(id);
+        log.debug(String.format("DELETE request handled: film %d deleted", id));
     }
 
     public void addLike(int filmId, int userId) {
         filmStorage.checkFilmId(filmId);
         userService.checkUserId(userId);
 
-        filmStorage.getFilmById(filmId).addLike(userId);
+        filmStorage.addLike(filmId, userId);
+        log.debug(String.format("PUT request handled: like from user %d added to film %d", userId, filmId));
     }
 
     public void deleteLike(int filmId, int userId) {
         filmStorage.checkFilmId(filmId);
         userService.checkUserId(userId);
 
-        if (!filmStorage.getFilmById(filmId).getLikes().contains(userId)) {
-            throw new NotFoundException(String.format("Film %d doesn't have likes from user %d", filmId, userId));
-        }
-        filmStorage.getFilmById(filmId).deleteLike(userId);
+        filmStorage.deleteLike(filmId, userId);
+        log.debug(String.format("DELETE request handled: like from user %d deleted from film %d", userId, filmId));
     }
 
     private void validateReleaseDate(Film film) {

@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -59,26 +58,21 @@ public class UserService {
         checkUserId(userId);
         checkUserId(friendId);
 
-        userStorage.getUserById(userId).addFriend(friendId);
-        userStorage.getUserById(friendId).addFriend(userId);
-        log.debug(String.format("POST request handled: users %d and %d are now friends", userId, friendId));
+        userStorage.addFriend(userId, friendId);
+        log.debug(String.format("POST request handled: user %d is now friend of user %d", userId, friendId));
     }
 
-    public void deleteFriend(int userid, int friendId) {
-        checkUserId(userid);
+    public void deleteFriend(int userId, int friendId) {
+        checkUserId(userId);
         checkUserId(friendId);
 
-        if (!userStorage.getUserById(userid).getFriendIds().contains(friendId)
-                || !userStorage.getUserById(friendId).getFriendIds().contains(userid)) {
-            throw new NotFoundException(String.format("Users %d and %d are not friends", userid, friendId));
-        }
-
-        userStorage.getUserById(userid).deleteFriend(friendId);
-        userStorage.getUserById(friendId).deleteFriend(userid);
+        userStorage.deleteFriend(userId, friendId);
+        log.debug(String.format("DELETE request handled: user %d is deleted from user %d friends", friendId, userId));
     }
 
     public List<User> getFriends(int userId) {
         return userStorage.getUserById(userId).getFriendIds().stream()
+                .sorted()
                 .map(userStorage::getUserById)
                 .collect(Collectors.toList());
     }
