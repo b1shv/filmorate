@@ -22,11 +22,11 @@ class MpaDbStorageTest {
     EmbeddedDatabase embeddedDatabase;
     JdbcTemplate jdbcTemplate;
     MpaDbStorage mpaDbStorage;
-    private final static Mpa G = new Mpa(1, "G");
-    private final static Mpa PG = new Mpa(2, "PG");
-    private final static Mpa PG13 = new Mpa(3, "PG-13");
-    private final static Mpa R = new Mpa(4, "R");
-    private final static Mpa NC17 = new Mpa(5, "NC-17");
+    private static final Mpa G = new Mpa(1, "G");
+    private static final Mpa PG = new Mpa(2, "PG");
+    private static final Mpa PG13 = new Mpa(3, "PG-13");
+    private static final Mpa R = new Mpa(4, "R");
+    private static final Mpa NC17 = new Mpa(5, "NC-17");
 
     @BeforeEach
     public void setUp() {
