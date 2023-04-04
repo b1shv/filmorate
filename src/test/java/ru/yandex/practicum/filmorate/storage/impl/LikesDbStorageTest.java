@@ -98,6 +98,7 @@ class LikesDbStorageTest {
 
         assertEquals(expected, actual);
     }
+
     @Test
     void getLikesByFilmIdShouldReturnFilmLikes() {
         jdbcTemplate.update(sqlInsert, 1, 1);
