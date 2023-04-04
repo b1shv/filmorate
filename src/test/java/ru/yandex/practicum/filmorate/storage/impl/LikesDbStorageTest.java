@@ -12,6 +12,8 @@ import ru.yandex.practicum.filmorate.model.Film;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,6 +55,50 @@ class LikesDbStorageTest {
     }
 
     @Test
+    void getAllFilmsLikesShouldReturnAllFilmsLikes() {
+        jdbcTemplate.update(sqlInsert, 1, 1);
+        jdbcTemplate.update(sqlInsert, 1, 2);
+        jdbcTemplate.update(sqlInsert, 2, 2);
+        jdbcTemplate.update(sqlInsert, 2, 3);
+
+        Map<Integer, Set<Integer>> expected = new HashMap<>();
+        expected.put(1, Set.of(1, 2));
+        expected.put(2, Set.of(2, 3));
+
+        Map<Integer, Set<Integer>> actual = likesDbStorage.getAllFilmsLikes();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void getMostPopularFilmsLikesShouldReturnMostPopularFilmsLikes() {
+        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
+                "film4", Date.valueOf("2000-01-01"), 120);
+        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
+                "film5", Date.valueOf("2001-01-01"), 120);
+        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
+                "film6", Date.valueOf("2002-01-01"), 120);
+
+        jdbcTemplate.update(sqlInsert, 1, 1);
+        jdbcTemplate.update(sqlInsert, 1, 2);
+        jdbcTemplate.update(sqlInsert, 1, 3);
+        jdbcTemplate.update(sqlInsert, 3, 1);
+        jdbcTemplate.update(sqlInsert, 3, 2);
+        jdbcTemplate.update(sqlInsert, 4, 1);
+        jdbcTemplate.update(sqlInsert, 6, 1);
+        jdbcTemplate.update(sqlInsert, 6, 2);
+        jdbcTemplate.update(sqlInsert, 6, 3);
+
+        Map<Integer, Set<Integer>> expected = new HashMap<>();
+        expected.put(1, Set.of(1, 2, 3));
+        expected.put(3, Set.of(1, 2));
+        expected.put(6, Set.of(1, 2, 3));
+
+        Map<Integer, Set<Integer>> actual = likesDbStorage.getMostPopularFilmsLikes(3);
+
+        assertEquals(expected, actual);
+    }
+    @Test
     void getLikesByFilmIdShouldReturnFilmLikes() {
         jdbcTemplate.update(sqlInsert, 1, 1);
         jdbcTemplate.update(sqlInsert, 1, 3);
@@ -66,7 +112,7 @@ class LikesDbStorageTest {
     @Test
     void updateFilmLikesShouldUpdateFilmLikes() {
         Film film1 = Film.builder().id(1).name("film1")
-                .releaseDate(LocalDate.of(2000, 01, 01))
+                .releaseDate(LocalDate.of(2000, 1, 1))
                 .genres(Collections.emptyList()).likes(Set.of(1, 2, 3))
                 .duration(90).build();
 

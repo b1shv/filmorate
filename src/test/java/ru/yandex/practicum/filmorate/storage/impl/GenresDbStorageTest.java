@@ -13,7 +13,9 @@ import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.sql.Date;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,6 +39,13 @@ class GenresDbStorageTest {
                 .build();
         jdbcTemplate = new JdbcTemplate(embeddedDatabase);
         genreDbStorage = new GenreDbStorage(jdbcTemplate);
+
+        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
+                "film1", Date.valueOf("2000-01-01"), 90);
+        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
+                "film2", Date.valueOf("2000-01-01"), 90);
+        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
+                "film3", Date.valueOf("2000-01-01"), 90);
     }
 
     @AfterEach
@@ -63,14 +72,32 @@ class GenresDbStorageTest {
     }
 
     @Test
-    void getGenresByFilmIdShouldReturnGenresOrEmptyList() {
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film1", Date.valueOf("2000-01-01"), 90);
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film2", Date.valueOf("2000-01-01"), 90);
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film3", Date.valueOf("2000-01-01"), 90);
+    void getAllFilmsGenresShouldReturnAllFilmsGenres() {
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                1, 2);
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                1, 6);
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                2, 3);
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                2, 5);
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                2, 6);
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                3, 1);
 
+        Map<Integer, List<Genre>> expected = new HashMap<>();
+        expected.put(1, List.of(drama, action));
+        expected.put(2, List.of(animation, documentary, action));
+        expected.put(3, List.of(comedy));
+
+        Map<Integer, List<Genre>> actual = genreDbStorage.getAllFilmsGenres();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void getGenresByFilmIdShouldReturnGenresOrEmptyList() {
         jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
                 1, 2);
         jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
@@ -84,9 +111,27 @@ class GenresDbStorageTest {
     }
 
     @Test
+    void getGenresByFilmsIdsShouldReturnFilmsGenres() {
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                1, 1);
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                1, 6);
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                2, 3);
+        jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
+                2, 4);
+
+        Map<Integer, List<Genre>> expected = new HashMap<>();
+        expected.put(1, List.of(comedy, action));
+        expected.put(2, List.of(animation, thriller));
+
+        Map<Integer, List<Genre>> actual = genreDbStorage.getGenresByFilmsIds(List.of(1, 2));
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void updateFilmGenresShouldChangeFilmGenres() {
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film1", Date.valueOf("2000-01-01"), 90);
         jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
                 1, 2);
 
@@ -102,13 +147,12 @@ class GenresDbStorageTest {
         List<Integer> expected = List.of(1, 5);
         List<Integer> actual = jdbcTemplate.queryForList(
                 "select genre_id from films_genres where film_id = ?", Integer.class, 1);
+
+        assertEquals(expected, actual);
     }
 
     @Test
     void deleteFilmGenresShouldRemoveFilmGenres() {
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film1", Date.valueOf("2000-01-01"), 90);
-
         jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
                 1, 2);
         jdbcTemplate.update("insert into films_genres (film_id, genre_id) values (?, ?)",
@@ -122,7 +166,7 @@ class GenresDbStorageTest {
 
         genreDbStorage.deleteFilmGenres(1);
 
-        List<Integer> expectedAfterDelete = Collections.EMPTY_LIST;
+        List<Integer> expectedAfterDelete = Collections.emptyList();
         List<Integer> actualAfterDelete = jdbcTemplate.queryForList(
                 "select genre_id from films_genres where film_id = ?", Integer.class, 1);
 

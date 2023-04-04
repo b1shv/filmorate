@@ -14,7 +14,6 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,9 +23,6 @@ class FilmDbStorageTest {
     EmbeddedDatabase embeddedDatabase;
     JdbcTemplate jdbcTemplate;
     FilmDbStorage filmDbStorage;
-    MpaDbStorage mpaDbStorage;
-    GenreDbStorage genreDbStorage;
-    LikesDbStorage likesDbStorage;
     Film film1;
     Film film2;
     Film film3;
@@ -38,10 +34,7 @@ class FilmDbStorageTest {
                 .setType(EmbeddedDatabaseType.H2)
                 .build();
         jdbcTemplate = new JdbcTemplate(embeddedDatabase);
-        mpaDbStorage = new MpaDbStorage(jdbcTemplate);
-        genreDbStorage = new GenreDbStorage(jdbcTemplate);
-        likesDbStorage = new LikesDbStorage(jdbcTemplate);
-        filmDbStorage = new FilmDbStorage(jdbcTemplate, mpaDbStorage, genreDbStorage, likesDbStorage);
+        filmDbStorage = new FilmDbStorage(jdbcTemplate);
 
         jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
                 "film1", Date.valueOf("2000-01-01"), 90);
@@ -51,18 +44,15 @@ class FilmDbStorageTest {
                 "film3", Date.valueOf("2002-01-01"), 110);
 
         film1 = Film.builder().id(1).name("film1")
-                .releaseDate(LocalDate.of(2000, 01, 01))
-                .genres(Collections.emptyList()).likes(Collections.emptySet())
+                .releaseDate(LocalDate.of(2000, 1, 1))
                 .duration(90).build();
 
         film2 = Film.builder().id(2).name("film2")
-                .releaseDate(LocalDate.of(2001, 01, 01))
-                .genres(Collections.emptyList()).likes(Collections.emptySet())
+                .releaseDate(LocalDate.of(21, 1, 1))
                 .duration(100).build();
 
         film3 = Film.builder().id(3).name("film3")
-                .releaseDate(LocalDate.of(2002, 01, 01))
-                .genres(Collections.emptyList()).likes(Collections.emptySet())
+                .releaseDate(LocalDate.of(2002, 1, 1))
                 .duration(110).build();
     }
 
@@ -91,10 +81,15 @@ class FilmDbStorageTest {
     }
 
     @Test
+    void getFilmsByIdsShouldReturnFilms() {
+        assertEquals(List.of(film1, film2, film3),
+                filmDbStorage.getFilmsByIds(List.of(1, 2, 3)));
+    }
+
+    @Test
     void addFilmShouldAddNewFilmToDb() {
         Film film4 = Film.builder().name("film4")
-                .releaseDate(LocalDate.of(2003, 01, 01))
-                .genres(Collections.emptyList()).likes(Collections.emptySet())
+                .releaseDate(LocalDate.of(2003, 1, 1))
                 .duration(120).build();
 
         filmDbStorage.addFilm(film4);
@@ -145,47 +140,5 @@ class FilmDbStorageTest {
         assertDoesNotThrow(() -> filmDbStorage.checkFilmId(3));
         assertThrows(NotFoundException.class, () -> filmDbStorage.checkFilmId(4));
         assertThrows(NotFoundException.class, () -> filmDbStorage.checkFilmId(444));
-    }
-
-    @Test
-    void addLikeShouldAddLikeToFilm() {
-        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
-                "user1", "user1login", "user1@user.com", Date.valueOf("2000-01-01"));
-        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
-                "user2", "user2login", "user2@user.com", Date.valueOf("2000-01-01"));
-        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
-                "user3", "user3login", "user3@user.com", Date.valueOf("2000-01-01"));
-
-        filmDbStorage.addLike(1, 1);
-        filmDbStorage.addLike(1, 2);
-        filmDbStorage.addLike(1, 3);
-
-        Set<Integer> expected = Set.of(1, 2, 3);
-        Set<Integer> actual = filmDbStorage.getFilmById(1).getLikes();
-
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    void deleteLikeShouldDeleteLikeFromFilm() {
-        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
-                "user1", "user1login", "user1@user.com", Date.valueOf("2000-01-01"));
-        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
-                "user2", "user2login", "user2@user.com", Date.valueOf("2000-01-01"));
-        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
-                "user3", "user3login", "user3@user.com", Date.valueOf("2000-01-01"));
-
-        filmDbStorage.addLike(1, 1);
-        filmDbStorage.addLike(1, 2);
-        filmDbStorage.addLike(1, 3);
-
-        filmDbStorage.deleteLike(1, 1);
-        assertEquals(Set.of(2, 3), filmDbStorage.getFilmById(1).getLikes());
-
-        filmDbStorage.deleteLike(1, 2);
-        assertEquals(Set.of(3), filmDbStorage.getFilmById(1).getLikes());
-
-        filmDbStorage.deleteLike(1, 3);
-        assertEquals(Collections.emptySet(), filmDbStorage.getFilmById(1).getLikes());
     }
 }

@@ -1,2 +1,2 @@
 # java-filmorate
-![ERD](https://github.com/b1shv/java-filmorate/tree/main/src/main/resources/erd.png)
+![ERD](https://raw.githubusercontent.com/b1shv/java-filmorate/add-database/src/main/resources/erd.png)

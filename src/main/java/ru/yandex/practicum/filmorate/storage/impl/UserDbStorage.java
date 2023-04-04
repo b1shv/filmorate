@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FriendshipStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.sql.Date;
@@ -21,11 +20,9 @@ import java.util.Map;
 @Primary
 public class UserDbStorage implements UserStorage {
     private final JdbcTemplate jdbcTemplate;
-    private final FriendshipStorage friendshipStorage;
 
-    public UserDbStorage(JdbcTemplate jdbcTemplate, FriendshipStorage friendshipStorage) {
+    public UserDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.friendshipStorage = friendshipStorage;
     }
 
     @Override
@@ -53,7 +50,6 @@ public class UserDbStorage implements UserStorage {
         userValues.put("birthday", Date.valueOf(user.getBirthday()));
 
         user.setId(simpleJdbcInsert.executeAndReturnKey(userValues).intValue());
-        friendshipStorage.updateUserFriends(user);
 
         return user;
     }
@@ -66,16 +62,36 @@ public class UserDbStorage implements UserStorage {
         jdbcTemplate.update(sql, user.getName(), user.getEmail(),
                 user.getLogin(), Date.valueOf(user.getBirthday()), user.getId());
 
-        friendshipStorage.updateUserFriends(user);
         return user;
     }
 
     @Override
     public void deleteUser(int id) {
-        friendshipStorage.deleteUserFriends(id);
-
         String sql = "DELETE FROM users WHERE user_id = ?";
         jdbcTemplate.update(sql, id);
+    }
+
+    @Override
+    public List<User> getUserFriends(int userId) {
+        String sql = "SELECT u.* " +
+                "FROM friendship AS f " +
+                "JOIN users AS u ON f.friend_id = u.user_id " +
+                "WHERE f.user_id = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> makeUser(rs), userId);
+    }
+
+    @Override
+    public List<User> getCommonFriends(int userId, int otherUserId) {
+        String sql = "SELECT * " +
+                "FROM users " +
+                "WHERE user_id in(" +
+                "SELECT friend_id " +
+                "FROM friendship " +
+                "WHERE user_id = ? OR user_id = ? " +
+                "GROUP BY friend_id " +
+                "HAVING COUNT(friend_id) > 1)";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> makeUser(rs), userId, otherUserId);
     }
 
     @Override
@@ -89,16 +105,6 @@ public class UserDbStorage implements UserStorage {
         }
     }
 
-    @Override
-    public void addFriend(int userId, int friendId) {
-        friendshipStorage.addFriend(userId, friendId);
-    }
-
-    @Override
-    public void deleteFriend(int userId, int friendId) {
-        friendshipStorage.deleteFriend(userId, friendId);
-    }
-
     private User makeUser(ResultSet rs) throws SQLException {
         return User.builder()
                 .id(rs.getInt("user_id"))
@@ -106,7 +112,6 @@ public class UserDbStorage implements UserStorage {
                 .login(rs.getString("login"))
                 .name(rs.getString("name"))
                 .birthday(rs.getDate("birthday").toLocalDate())
-                .friendIds(friendshipStorage.getFiendsIds(rs.getInt("user_id")))
                 .build();
     }
 }

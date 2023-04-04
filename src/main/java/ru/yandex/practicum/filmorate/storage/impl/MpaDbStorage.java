@@ -4,7 +4,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.MpaStorage;
 
@@ -35,33 +34,6 @@ public class MpaDbStorage implements MpaStorage {
         } catch (EmptyResultDataAccessException e) {
             throw new NotFoundException(String.format("Mpa %d is not found", id));
         }
-    }
-
-    @Override
-    public Mpa getMpaByFilmId(int id) {
-        String sql =
-                "SELECT m.* FROM mpa AS m JOIN films_mpa AS fm ON m.mpa_id = fm.mpa_id WHERE fm.film_id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, this::makeMpa, id);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
-    }
-
-    @Override
-    public void updateFilmMpa(Film film) {
-        deleteFilmMpa(film.getId());
-
-        if (film.getMpa() != null) {
-            String insertSql = "INSERT INTO films_mpa (film_id, mpa_id) VALUES (?, ?)";
-            jdbcTemplate.update(insertSql, film.getId(), film.getMpa().getId());
-        }
-    }
-
-    @Override
-    public void deleteFilmMpa(int filmId) {
-        String sql = "DELETE FROM films_mpa WHERE film_id = ?";
-        jdbcTemplate.update(sql, filmId);
     }
 
     private Mpa makeMpa(ResultSet rs, int rowNum) throws SQLException {

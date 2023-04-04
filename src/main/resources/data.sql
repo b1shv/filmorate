@@ -30,3 +30,10 @@ VALUES ('R');
 
 INSERT INTO mpa (name)
 VALUES ('NC-17');
+
+
+
+
+
+
+

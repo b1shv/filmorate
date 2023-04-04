@@ -12,6 +12,9 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,7 +53,7 @@ class FriendshipDbStorageTest {
     }
 
     @Test
-    void getFiendsIdsShouldReturnFriendsIds() {
+    void getAllUsersFriendsIdsShouldReturnAllUsersFriendsIds() {
         jdbcTemplate.update(sqlInsert, 1, 2);
         jdbcTemplate.update(sqlInsert, 1, 4);
         jdbcTemplate.update(sqlInsert, 1, 5);
@@ -58,15 +61,54 @@ class FriendshipDbStorageTest {
         jdbcTemplate.update(sqlInsert, 3, 4);
         jdbcTemplate.update(sqlInsert, 5, 2);
 
-        assertEquals(Set.of(2, 4, 5), friendshipDbStorage.getFiendsIds(1));
-        assertEquals(Set.of(2, 4), friendshipDbStorage.getFiendsIds(3));
-        assertEquals(Set.of(2), friendshipDbStorage.getFiendsIds(5));
+        Map<Integer, Set<Integer>> expected = new HashMap<>();
+        expected.put(1, Set.of(2, 4, 5));
+        expected.put(3, Set.of(2, 4));
+        expected.put(5, Set.of(2));
+
+        Map<Integer, Set<Integer>> actual = friendshipDbStorage.getAllUsersFriendsIds();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void getUserFiendsIdsShouldReturnFriendsIds() {
+        jdbcTemplate.update(sqlInsert, 1, 2);
+        jdbcTemplate.update(sqlInsert, 1, 4);
+        jdbcTemplate.update(sqlInsert, 1, 5);
+        jdbcTemplate.update(sqlInsert, 3, 2);
+        jdbcTemplate.update(sqlInsert, 3, 4);
+        jdbcTemplate.update(sqlInsert, 5, 2);
+
+        assertEquals(Set.of(2, 4, 5), friendshipDbStorage.getUserFriendsIds(1));
+        assertEquals(Set.of(2, 4), friendshipDbStorage.getUserFriendsIds(3));
+        assertEquals(Set.of(2), friendshipDbStorage.getUserFriendsIds(5));
+    }
+
+    @Test
+    void getUsersFriendsIdsShouldReturnUsersFriends() {
+        jdbcTemplate.update(sqlInsert, 2, 1);
+        jdbcTemplate.update(sqlInsert, 2, 5);
+        jdbcTemplate.update(sqlInsert, 2, 4);
+        jdbcTemplate.update(sqlInsert, 3, 1);
+        jdbcTemplate.update(sqlInsert, 3, 5);
+        jdbcTemplate.update(sqlInsert, 5, 1);
+        jdbcTemplate.update(sqlInsert, 5, 4);
+
+        Map<Integer, Set<Integer>> expected = new HashMap<>();
+        expected.put(2, Set.of(1, 5, 4));
+        expected.put(3, Set.of(1, 5));
+        expected.put(5, Set.of(1, 4));
+
+        Map<Integer, Set<Integer>> actual = friendshipDbStorage.getUsersFriendsIds(List.of(2, 3, 5));
+
+        assertEquals(expected, actual);
     }
 
     @Test
     void updateUserFriendsShouldUpdateUserFriends() {
         User user = User.builder().id(1).name("user1").login("user1login").email("user1@user.com")
-                .birthday(LocalDate.of(2000, 01, 01)).build();
+                .birthday(LocalDate.of(2000, 1, 1)).build();
 
         user.setFriendIds(Set.of(3, 4, 5));
 

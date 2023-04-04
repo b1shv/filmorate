@@ -9,6 +9,8 @@ public interface FilmStorage {
 
     Film getFilmById(int id);
 
+    List<Film> getFilmsByIds(List<Integer> filmIds);
+
     Film addFilm(Film film);
 
     Film updateFilm(Film film);
@@ -16,8 +18,4 @@ public interface FilmStorage {
     void deleteFilm(int id);
 
     void checkFilmId(int id);
-
-    void addLike(int filmId, int userId);
-
-    void deleteLike(int filmId, int userId);
 }

@@ -14,7 +14,6 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,7 +23,6 @@ class UserDbStorageTest {
     EmbeddedDatabase embeddedDatabase;
     JdbcTemplate jdbcTemplate;
     UserDbStorage userDbStorage;
-    FriendshipDbStorage friendshipDbStorage;
     User user1;
     User user2;
     User user3;
@@ -36,8 +34,7 @@ class UserDbStorageTest {
                 .setType(EmbeddedDatabaseType.H2)
                 .build();
         jdbcTemplate = new JdbcTemplate(embeddedDatabase);
-        friendshipDbStorage = new FriendshipDbStorage(jdbcTemplate);
-        userDbStorage = new UserDbStorage(jdbcTemplate, friendshipDbStorage);
+        userDbStorage = new UserDbStorage(jdbcTemplate);
 
         jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
                 "user1", "user1login", "user1@user.com", Date.valueOf("2000-01-01"));
@@ -48,16 +45,16 @@ class UserDbStorageTest {
 
         user1 = User.builder()
                 .id(1).name("user1").login("user1login").email("user1@user.com")
-                .birthday(LocalDate.of(2000, 01, 01))
-                .friendIds(Collections.emptySet()).build();
+                .birthday(LocalDate.of(2000, 1, 1))
+                .build();
         user2 = User.builder()
                 .id(2).name("user2").login("user2login").email("user2@user.com")
-                .birthday(LocalDate.of(2000, 01, 01))
-                .friendIds(Collections.emptySet()).build();
+                .birthday(LocalDate.of(2000, 1, 1))
+                .build();
         user3 = User.builder()
                 .id(3).name("user3").login("user3login").email("user3@user.com")
-                .birthday(LocalDate.of(2000, 01, 01))
-                .friendIds(Collections.emptySet()).build();
+                .birthday(LocalDate.of(2000, 1, 1))
+                .build();
     }
 
     @AfterEach
@@ -88,8 +85,8 @@ class UserDbStorageTest {
     void addUserShouldAddNewUserToDb() {
         User user4 = User.builder().name("user4")
                 .login("user4login").email("user4@user.com")
-                .birthday(LocalDate.of(2000, 01, 01))
-                .friendIds(Collections.emptySet()).build();
+                .birthday(LocalDate.of(2000, 1, 1))
+                .build();
 
         userDbStorage.addUser(user4);
         assertEquals(user4, userDbStorage.getUserById(4));
@@ -134,37 +131,64 @@ class UserDbStorageTest {
     }
 
     @Test
+    void getUserFriendsShouldReturnUserFriends() {
+        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
+                "user4", "user4login", "user4@user.com", Date.valueOf("2000-01-01"));
+        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
+                "user5", "user5login", "user5@user.com", Date.valueOf("2000-01-01"));
+
+        User user4 = User.builder()
+                .id(4).name("user4").login("user4login").email("user4@user.com")
+                .birthday(LocalDate.of(2000, 1, 1))
+                .build();
+
+        User user5 = User.builder()
+                .id(5).name("user5").login("user5login").email("user5@user.com")
+                .birthday(LocalDate.of(2000, 1, 1))
+                .build();
+
+        jdbcTemplate.update("insert into friendship values(?, ?)", 1, 3);
+        jdbcTemplate.update("insert into friendship values(?, ?)", 1, 4);
+        jdbcTemplate.update("insert into friendship values(?, ?)", 1, 5);
+        jdbcTemplate.update("insert into friendship values(?, ?)", 3, 2);
+        jdbcTemplate.update("insert into friendship values(?, ?)", 3, 4);
+
+        assertEquals(List.of(user3, user4, user5), userDbStorage.getUserFriends(1));
+        assertEquals(List.of(user2, user4), userDbStorage.getUserFriends(3));
+        assertEquals(Collections.emptyList(), userDbStorage.getUserFriends(4));
+    }
+
+    @Test
+    void getCommonFriendsShouldReturnCommonFriends() {
+        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
+                "user4", "user4login", "user4@user.com", Date.valueOf("2000-01-01"));
+        jdbcTemplate.update("insert into users (name, login, email, birthday) values (?, ?, ?, ?)",
+                "user5", "user5login", "user5@user.com", Date.valueOf("2000-01-01"));
+
+        User user5 = User.builder()
+                .id(5).name("user5").login("user5login").email("user5@user.com")
+                .birthday(LocalDate.of(2000, 1, 1))
+                .build();
+
+        jdbcTemplate.update("insert into friendship values(?, ?)", 1, 3);
+        jdbcTemplate.update("insert into friendship values(?, ?)", 1, 4);
+        jdbcTemplate.update("insert into friendship values(?, ?)", 1, 5);
+        jdbcTemplate.update("insert into friendship values(?, ?)", 2, 3);
+        jdbcTemplate.update("insert into friendship values(?, ?)", 2, 1);
+        jdbcTemplate.update("insert into friendship values(?, ?)", 2, 5);
+
+        List<User> expected = List.of(user3, user5);
+        List<User> actual = userDbStorage.getCommonFriends(1, 2);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void checkUserIdShouldThrowException_ifWrongId() {
         assertDoesNotThrow(() -> userDbStorage.checkUserId(1));
         assertDoesNotThrow(() -> userDbStorage.checkUserId(2));
         assertDoesNotThrow(() -> userDbStorage.checkUserId(3));
         assertThrows(NotFoundException.class, () -> userDbStorage.checkUserId(4));
         assertThrows(NotFoundException.class, () -> userDbStorage.checkUserId(4444));
-    }
-
-    @Test
-    void addFriendShouldAddFriendToUser() {
-        userDbStorage.addFriend(1, 2);
-        userDbStorage.addFriend(1, 3);
-        userDbStorage.addFriend(2, 3);
-        userDbStorage.addFriend(3, 1);
-
-        assertEquals(Set.of(2, 3), userDbStorage.getUserById(1).getFriendIds());
-        assertEquals(Set.of(3), userDbStorage.getUserById(2).getFriendIds());
-        assertEquals(Set.of(1), userDbStorage.getUserById(3).getFriendIds());
-    }
-
-    @Test
-    void deleteFriendShouldDeleteFriendFromUser() {
-        userDbStorage.addFriend(1, 2);
-        userDbStorage.addFriend(1, 3);
-
-        assertEquals(Set.of(2, 3), userDbStorage.getUserById(1).getFriendIds());
-
-        userDbStorage.deleteFriend(1, 2);
-        assertEquals(Set.of(3), userDbStorage.getUserById(1).getFriendIds());
-
-        userDbStorage.deleteFriend(1, 3);
-        assertEquals(Collections.emptySet(), userDbStorage.getUserById(1).getFriendIds());
     }
 }
