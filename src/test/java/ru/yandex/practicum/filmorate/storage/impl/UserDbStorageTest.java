@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
@@ -15,9 +14,9 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserDbStorageTest {
     EmbeddedDatabase embeddedDatabase;
@@ -184,11 +183,12 @@ class UserDbStorageTest {
     }
 
     @Test
-    void checkUserIdShouldThrowException_ifWrongId() {
-        assertDoesNotThrow(() -> userDbStorage.checkUserId(1));
-        assertDoesNotThrow(() -> userDbStorage.checkUserId(2));
-        assertDoesNotThrow(() -> userDbStorage.checkUserId(3));
-        assertThrows(NotFoundException.class, () -> userDbStorage.checkUserId(4));
-        assertThrows(NotFoundException.class, () -> userDbStorage.checkUserId(4444));
+    void userExistsShouldReturnFalse_ifWrongId() {
+        assertTrue(userDbStorage.userExists(1));
+        assertTrue(userDbStorage.userExists(2));
+        assertTrue(userDbStorage.userExists(3));
+
+        assertFalse(userDbStorage.userExists(4));
+        assertFalse(userDbStorage.userExists(4444));
     }
 }

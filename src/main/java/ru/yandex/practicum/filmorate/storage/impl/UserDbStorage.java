@@ -1,11 +1,12 @@
 package ru.yandex.practicum.filmorate.storage.impl;
 
 import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -95,13 +96,31 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public void checkUserId(int id) {
+    public void addFriend(int userId, int friendId) {
+        try {
+            jdbcTemplate.update(
+                    "INSERT INTO friendship (user_id, friend_id) VALUES (?, ?)", userId, friendId);
+        } catch (DuplicateKeyException e) {
+            throw new ValidationException(
+                    String.format("User %d is already a friend of user %d", friendId, userId));
+        }
+    }
+
+    @Override
+    public void deleteFriend(int userId, int friendId) {
+        jdbcTemplate.update(
+                "DELETE FROM friendship WHERE user_id = ? AND friend_id = ?", userId, friendId);
+    }
+
+    @Override
+    public boolean userExists(int id) {
         String sql = "SELECT user_id FROM users WHERE user_id = ?";
 
         try {
             jdbcTemplate.queryForObject(sql, Integer.class, id);
+            return true;
         } catch (EmptyResultDataAccessException e) {
-            throw new NotFoundException(String.format("User %d is not found", id));
+            return false;
         }
     }
 

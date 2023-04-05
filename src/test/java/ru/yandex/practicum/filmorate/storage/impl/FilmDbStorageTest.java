@@ -7,17 +7,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FilmDbStorageTest {
     EmbeddedDatabase embeddedDatabase;
@@ -36,24 +36,24 @@ class FilmDbStorageTest {
         jdbcTemplate = new JdbcTemplate(embeddedDatabase);
         filmDbStorage = new FilmDbStorage(jdbcTemplate);
 
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film1", Date.valueOf("2000-01-01"), 90);
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film2", Date.valueOf("2001-01-01"), 100);
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film3", Date.valueOf("2002-01-01"), 110);
+        jdbcTemplate.update("insert into films (name, release_date, duration, mpa_id) values (?, ?, ?, ?)",
+                "film1", Date.valueOf("2000-01-01"), 90, 1);
+        jdbcTemplate.update("insert into films (name, release_date, duration, mpa_id) values (?, ?, ?, ?)",
+                "film2", Date.valueOf("2001-01-01"), 100, 1);
+        jdbcTemplate.update("insert into films (name, release_date, duration, mpa_id) values (?, ?, ?, ?)",
+                "film3", Date.valueOf("2002-01-01"), 110, 1);
 
         film1 = Film.builder().id(1).name("film1")
                 .releaseDate(LocalDate.of(2000, 1, 1))
-                .duration(90).build();
+                .duration(90).mpa(new Mpa(1, "G")).build();
 
         film2 = Film.builder().id(2).name("film2")
                 .releaseDate(LocalDate.of(2001, 1, 1))
-                .duration(100).build();
+                .duration(100).mpa(new Mpa(1, "G")).build();
 
         film3 = Film.builder().id(3).name("film3")
                 .releaseDate(LocalDate.of(2002, 1, 1))
-                .duration(110).build();
+                .duration(110).mpa(new Mpa(1, "G")).build();
     }
 
     @AfterEach
@@ -81,16 +81,10 @@ class FilmDbStorageTest {
     }
 
     @Test
-    void getFilmsByIdsShouldReturnFilms() {
-        assertEquals(List.of(film1, film2, film3),
-                filmDbStorage.getFilmsByIds(List.of(1, 2, 3)));
-    }
-
-    @Test
     void addFilmShouldAddNewFilmToDb() {
         Film film4 = Film.builder().name("film4")
                 .releaseDate(LocalDate.of(2003, 1, 1))
-                .duration(120).build();
+                .duration(120).mpa(new Mpa(1, "G")).build();
 
         filmDbStorage.addFilm(film4);
         assertEquals(film4, filmDbStorage.getFilmById(4));
@@ -135,10 +129,12 @@ class FilmDbStorageTest {
     }
 
     @Test
-    void checkFilmIdShouldThrowException_ifWrongId() {
-        assertDoesNotThrow(() -> filmDbStorage.checkFilmId(1));
-        assertDoesNotThrow(() -> filmDbStorage.checkFilmId(3));
-        assertThrows(NotFoundException.class, () -> filmDbStorage.checkFilmId(4));
-        assertThrows(NotFoundException.class, () -> filmDbStorage.checkFilmId(444));
+    void filmExistsShouldReturnFalse_ifWrongId() {
+        assertTrue(filmDbStorage.filmExists(1));
+        assertTrue(filmDbStorage.filmExists(2));
+        assertTrue(filmDbStorage.filmExists(3));
+
+        assertFalse(filmDbStorage.filmExists(4));
+        assertFalse(filmDbStorage.filmExists(999));
     }
 }

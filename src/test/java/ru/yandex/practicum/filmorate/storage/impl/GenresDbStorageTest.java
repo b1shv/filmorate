@@ -40,12 +40,12 @@ class GenresDbStorageTest {
         jdbcTemplate = new JdbcTemplate(embeddedDatabase);
         genreDbStorage = new GenreDbStorage(jdbcTemplate);
 
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film1", Date.valueOf("2000-01-01"), 90);
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film2", Date.valueOf("2000-01-01"), 90);
-        jdbcTemplate.update("insert into films (name, release_date, duration) values (?, ?, ?)",
-                "film3", Date.valueOf("2000-01-01"), 90);
+        jdbcTemplate.update("insert into films (name, release_date, duration, mpa_id) values (?, ?, ?, ?)",
+                "film1", Date.valueOf("2000-01-01"), 90, 1);
+        jdbcTemplate.update("insert into films (name, release_date, duration, mpa_id) values (?, ?, ?, ?)",
+                "film2", Date.valueOf("2001-01-01"), 100, 1);
+        jdbcTemplate.update("insert into films (name, release_date, duration, mpa_id) values (?, ?, ?, ?)",
+                "film3", Date.valueOf("2002-01-01"), 110, 1);
     }
 
     @AfterEach

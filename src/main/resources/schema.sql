@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS films (
     description VARCHAR(200),
     release_date DATE NOT NULL,
     duration INTEGER,
-    mpa_id INTEGER REFERENCES mpa (mpa_id)
+    mpa_id INTEGER NOT NULL REFERENCES mpa (mpa_id)
 );
 
 CREATE TABLE IF NOT EXISTS genres (
