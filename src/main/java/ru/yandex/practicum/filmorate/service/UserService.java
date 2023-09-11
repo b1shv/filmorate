@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -25,7 +24,10 @@ public class UserService {
     }
 
     public User getUserById(int id) {
-        checkUserId(id);
+        if (!userStorage.userExists(id)) {
+            throw new NotFoundException(String.format("User %d is not found", id));
+        }
+
         return userStorage.getUserById(id);
     }
 
@@ -39,7 +41,9 @@ public class UserService {
     }
 
     public User updateUser(User user) {
-        checkUserId(user.getId());
+        if (!userStorage.userExists(user.getId())) {
+            throw new NotFoundException(String.format("User %d is not found", user.getId()));
+        }
 
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
@@ -50,50 +54,54 @@ public class UserService {
     }
 
     public void deleteUser(int id) {
-        checkUserId(id);
+        if (!userStorage.userExists(id)) {
+            throw new NotFoundException(String.format("User %d is not found", id));
+        }
+
         userStorage.deleteUser(id);
         log.debug(String.format("DELETE request handled: user %d is deleted", id));
     }
 
     public void addFriend(int userId, int friendId) {
-        checkUserId(userId);
-        checkUserId(friendId);
-
-        userStorage.getUserById(userId).addFriend(friendId);
-        userStorage.getUserById(friendId).addFriend(userId);
-        log.debug(String.format("POST request handled: users %d and %d are now friends", userId, friendId));
-    }
-
-    public void deleteFriend(int userid, int friendId) {
-        checkUserId(userid);
-        checkUserId(friendId);
-
-        if (!userStorage.getUserById(userid).getFriendIds().contains(friendId)
-                || !userStorage.getUserById(friendId).getFriendIds().contains(userid)) {
-            throw new NotFoundException(String.format("Users %d and %d are not friends", userid, friendId));
+        if (!userStorage.userExists(userId)) {
+            throw new NotFoundException(String.format("User %d is not found", userId));
+        }
+        if (!userStorage.userExists(friendId)) {
+            throw new NotFoundException(String.format("User %d is not found", friendId));
         }
 
-        userStorage.getUserById(userid).deleteFriend(friendId);
-        userStorage.getUserById(friendId).deleteFriend(userid);
+        userStorage.addFriend(userId, friendId);
+        log.debug(String.format("POST request handled: user %d is now friend of user %d", userId, friendId));
+    }
+
+    public void deleteFriend(int userId, int friendId) {
+        if (!userStorage.userExists(userId)) {
+            throw new NotFoundException(String.format("User %d is not found", userId));
+        }
+        if (!userStorage.userExists(friendId)) {
+            throw new NotFoundException(String.format("User %d is not found", friendId));
+        }
+
+        userStorage.deleteFriend(userId, friendId);
+        log.debug(String.format("DELETE request handled: user %d is deleted from user %d friends", friendId, userId));
     }
 
     public List<User> getFriends(int userId) {
-        return userStorage.getUserById(userId).getFriendIds().stream()
-                .map(userStorage::getUserById)
-                .collect(Collectors.toList());
+        if (!userStorage.userExists(userId)) {
+            throw new NotFoundException(String.format("User %d is not found", userId));
+        }
+
+        return userStorage.getUserFriends(userId);
     }
 
     public List<User> getCommonFriends(int userId, int otherUserId) {
-        checkUserId(userId);
-        checkUserId(otherUserId);
+        if (!userStorage.userExists(userId)) {
+            throw new NotFoundException(String.format("User %d is not found", userId));
+        }
+        if (!userStorage.userExists(otherUserId)) {
+            throw new NotFoundException(String.format("User %d is not found", otherUserId));
+        }
 
-        return userStorage.getUserById(userId).getFriendIds().stream()
-                .filter(id -> userStorage.getUserById(otherUserId).getFriendIds().contains(id))
-                .map(userStorage::getUserById)
-                .collect(Collectors.toList());
-    }
-
-    protected void checkUserId(int id) {
-        userStorage.checkUserId(id);
+        return userStorage.getCommonFriends(userId, otherUserId);
     }
 }
